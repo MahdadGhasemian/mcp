@@ -1,0 +1,13 @@
+{
+  "name": "mcp",
+  "scripts": {
+    "install-client-dependencies": "cd mcp-client-typescript && npm i",
+    "install-server-dependencies": "cd weather-server-typescript && npm i",
+    "install-dependencies": "npm run install-client-dependencies && npm run install-server-dependencies",
+    "build-client": "cd mcp-client-typescript && npm run build",
+    "build-server": "cd weather-server-typescript && npm run build",
+    "build": "npm run build-client && npm run build-server",
+    "start": "node ./mcp-client-typescript/build/index.js ./weather-server-typescript/build/index.js",
+    "dev": "npm run build && npm run start"
+  }
+}
