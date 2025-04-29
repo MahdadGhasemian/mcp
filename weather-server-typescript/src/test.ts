@@ -1,9 +1,11 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
+  CallToolRequestSchema,
   GetPromptRequestSchema,
   ListPromptsRequestSchema,
   ListResourcesRequestSchema,
+  ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { readFile, writeFile, access } from "fs/promises";
@@ -66,6 +68,7 @@ const server = new Server(
     capabilities: {
       resources: {},
       prompts: {},
+      tools: {},
     },
   }
 );
@@ -149,6 +152,53 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
   }
 
   throw new Error("Prompt implementation not found");
+});
+
+// Define available tools
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "calculate_sum",
+        description: "Add two numbers together",
+        inputSchema: {
+          type: "object",
+          properties: {
+            a: { type: "number" },
+            b: { type: "number" },
+          },
+          required: ["a", "b"],
+        },
+      },
+      {
+        name: "execute_command",
+        description: "Run a shell command",
+        inputSchema: {
+          type: "object",
+          properties: {
+            command: { type: "string" },
+            // args: { type: "array", items: { type: "string" } },
+          },
+        },
+      },
+    ],
+  };
+});
+
+// Handle tool execution
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === "calculate_sum") {
+    const { a, b } = request.params.arguments as { a: number; b: number };
+    return {
+      content: [
+        {
+          type: "text",
+          text: String(a + b),
+        },
+      ],
+    };
+  }
+  throw new Error("Tool not found");
 });
 
 async function main() {
