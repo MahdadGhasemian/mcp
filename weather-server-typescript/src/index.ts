@@ -118,7 +118,9 @@ server.tool(
     }
 
     const formattedAlerts = features.map(formatAlert);
-    const alertsText = `Active alerts for ${stateCode}:\n\n${formattedAlerts.join("\n")}`;
+    const alertsText = `Active alerts for ${stateCode}:\n\n${formattedAlerts.join(
+      "\n"
+    )}`;
 
     return {
       content: [
@@ -128,7 +130,7 @@ server.tool(
         },
       ],
     };
-  },
+  }
 );
 
 server.tool(
@@ -136,11 +138,17 @@ server.tool(
   "Get weather forecast for a location",
   {
     latitude: z.number().min(-90).max(90).describe("Latitude of the location"),
-    longitude: z.number().min(-180).max(180).describe("Longitude of the location"),
+    longitude: z
+      .number()
+      .min(-180)
+      .max(180)
+      .describe("Longitude of the location"),
   },
   async ({ latitude, longitude }) => {
     // Get grid point data
-    const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+    const pointsUrl = `${NWS_API_BASE}/points/${latitude.toFixed(
+      4
+    )},${longitude.toFixed(4)}`;
     const pointsData = await makeNWSRequest<PointsResponse>(pointsUrl);
 
     if (!pointsData) {
@@ -195,14 +203,18 @@ server.tool(
     const formattedForecast = periods.map((period: ForecastPeriod) =>
       [
         `${period.name || "Unknown"}:`,
-        `Temperature: ${period.temperature || "Unknown"}°${period.temperatureUnit || "F"}`,
+        `Temperature: ${period.temperature || "Unknown"}°${
+          period.temperatureUnit || "F"
+        }`,
         `Wind: ${period.windSpeed || "Unknown"} ${period.windDirection || ""}`,
         `${period.shortForecast || "No forecast available"}`,
         "---",
-      ].join("\n"),
+      ].join("\n")
     );
 
-    const forecastText = `Forecast for ${latitude}, ${longitude}:\n\n${formattedForecast.join("\n")}`;
+    const forecastText = `Forecast for ${latitude}, ${longitude}:\n\n${formattedForecast.join(
+      "\n"
+    )}`;
 
     return {
       content: [
@@ -212,7 +224,7 @@ server.tool(
         },
       ],
     };
-  },
+  }
 );
 
 // Running the server

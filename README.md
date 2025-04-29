@@ -39,6 +39,8 @@ Give me the weather forecast for Los Angeles, California.
 
 ```bash
 npx @modelcontextprotocol/inspector node ./weather-server-typescript/build/index.js
+
+cd weather-server-typescript && npm run build-test && cd .. && npx @modelcontextprotocol/inspector node ./weather-server-typescript/build/test.js
 ```
 
 ## Docs
