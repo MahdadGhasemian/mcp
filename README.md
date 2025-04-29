@@ -35,6 +35,12 @@ npm run dev
 
 Give me the weather forecast for Los Angeles, California.
 
+## MCP Server Debugging
+
+```bash
+npx @modelcontextprotocol/inspector node ./weather-server-typescript/build/index.js
+```
+
 ## Docs
 
 [Anthropic API Key Manage](https://console.anthropic.com/settings/keys)
