@@ -21,8 +21,14 @@ Copy the example environment file and create your .env file:
 cp .env.example .env
 ```
 
-Edit the .env file and replace the `ANTHROPIC_API_KEY` with your API key.
-You can also modify `ANTHROPIC_MODEL` and `ANTHROPIC_MAX_TOKENS` if needed.
+Open the .env file and set the `LLM_PROVIDER` variable to either `LLM_PROVIDER` or `ANTHROPIC`, depending on which provider you want to use:
+
+* **If you choose the `Ollama`**:
+Set the `OLLAMA_MODEL` variable to match the model installed in your system.
+
+* **If you choose the `Anthropic`**:
+Set the `ANTHROPIC_API_KEY` with your API key.
+You can also modify `ANTHROPIC_MODEL` and `ANTHROPIC_MAX_TOKENS` as needed.
 
 ### Build and Running
 
@@ -51,4 +57,4 @@ cd weather-server-typescript && npm run build-test && cd .. && npx @modelcontext
 
 [Anthropic API Key Manage](https://console.anthropic.com/settings/keys)
 [Anthropic Model Pricing](https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table)
-
+[Ollama](https://ollama.com/)
