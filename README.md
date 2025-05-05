@@ -36,6 +36,7 @@ npm run dev
 Give me the weather forecast for Los Angeles, California.
 
 ## If needed
+
 Sure! The approximate latitude and longitude for Los Angeles, California are: Latitude: 34.0522° N Longitude: 118.2437° W
 
 ## MCP Server Debugging

@@ -1,8 +1,10 @@
 import { Anthropic } from "@anthropic-ai/sdk";
 import {
-  MessageParam,
-  Tool,
+  MessageParam as AnthropicMessage,
+  Tool as AnthropicTool,
 } from "@anthropic-ai/sdk/resources/messages/messages.mjs";
+import ollama, { Message as OllamaMessage, Tool as OllamaTool } from 'ollama'
+
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import readline from "readline/promises";
@@ -10,13 +12,22 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const LLM_PROVIDER = process.env.LLM_PROVIDER;
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const ANTHROPIC_MODEL =
-  process.env.ANTHROPIC_MODEL || "claude-3-haiku-20240307";
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL;
 const ANTHROPIC_MAX_TOKENS = process.env.ANTHROPIC_MAX_TOKENS || 1000;
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL;
 
-if (!ANTHROPIC_API_KEY) {
+if (LLM_PROVIDER === "OLLAMA" && !OLLAMA_MODEL) {
+  throw new Error("OLLAMA_MODEL is not set");
+}
+
+if (LLM_PROVIDER === "ANTHROPIC" && !ANTHROPIC_API_KEY) {
   throw new Error("ANTHROPIC_API_KEY is not set");
+}
+
+if (LLM_PROVIDER === "ANTHROPIC" && !ANTHROPIC_MODEL) {
+  throw new Error("ANTHROPIC_MODEL is not set");
 }
 
 // Client Structure
@@ -24,7 +35,8 @@ class MCPClient {
   private mcp: Client;
   private anthropic: Anthropic;
   private transport: StdioClientTransport | null = null;
-  private tools: Tool[] = [];
+  private anthropicTools: AnthropicTool[] = [];
+  private ollamaTool: OllamaTool[] = [];
 
   constructor() {
     this.anthropic = new Anthropic({
@@ -43,16 +55,50 @@ class MCPClient {
       this.mcp.connect(this.transport);
 
       const toolsResult = await this.mcp.listTools();
-      this.tools = toolsResult.tools.map((tool) => {
-        return {
-          name: tool.name,
-          description: tool.description,
-          input_schema: tool.inputSchema,
-        };
-      });
+
+      if (LLM_PROVIDER === "ANTHROPIC") {
+        this.anthropicTools = toolsResult.tools.map((tool) => {
+          return {
+            name: tool.name,
+            description: tool.description,
+            input_schema: tool.inputSchema,
+          };
+        });
+        console.log(
+          "Connected to server with tools:",
+          this.anthropicTools.map(({ name }) => name)
+        );
+      }
+      if (LLM_PROVIDER === "OLLAMA") {
+        this.ollamaTool = toolsResult.tools.map((tool) => {
+          return {
+            type: 'function',
+            function: {
+              name: tool.name,
+              description: tool.description,
+              parameters: tool.inputSchema as {
+                type: string;
+                properties?: {
+                  [key: string]: {
+                    type?: string | string[];
+                    items?: any;
+                    description?: string;
+                    enum?: any[];
+                  };
+                };
+                required?: string[];
+              }
+            }
+          };
+        });
+        console.log(
+          "Connected to server with tools:",
+          this.ollamaTool.map((t) => t.function.name)
+        );
+      }
+
       console.log(
-        "Connected to server with tools:",
-        this.tools.map(({ name }) => name)
+        `LLM Provider: ${LLM_PROVIDER}`
       );
     } catch (e) {
       console.log("Failed to connect to MCP server: ", e);
@@ -60,9 +106,9 @@ class MCPClient {
     }
   }
 
-  // Query Processing Logic
-  async processQuery(query: string) {
-    const messages: MessageParam[] = [
+  // Query Processing Logic Anthropic
+  async processQueryAnthropic(query: string) {
+    const messages: AnthropicMessage[] = [
       {
         role: "user",
         content: query,
@@ -70,10 +116,10 @@ class MCPClient {
     ];
 
     const response = await this.anthropic.messages.create({
-      model: ANTHROPIC_MODEL,
+      model: ANTHROPIC_MODEL!,
       max_tokens: +ANTHROPIC_MAX_TOKENS,
       messages,
-      tools: this.tools,
+      tools: this.anthropicTools,
     });
 
     const finalText = [];
@@ -101,7 +147,7 @@ class MCPClient {
         });
 
         const response = await this.anthropic.messages.create({
-          model: ANTHROPIC_MODEL,
+          model: ANTHROPIC_MODEL!,
           max_tokens: +ANTHROPIC_MAX_TOKENS,
           messages,
         });
@@ -109,6 +155,61 @@ class MCPClient {
         finalText.push(
           response.content[0].type === "text" ? response.content[0].text : ""
         );
+      }
+    }
+
+    return finalText.join("\n");
+  }
+
+  // Query Processing Logic Ollama
+  async processQueryOllama(query: string) {
+    const messages: OllamaMessage[] = [
+      {
+        role: "user",
+        content: query,
+      },
+    ];
+
+    const response = await ollama.chat({
+      model: OLLAMA_MODEL!,
+      messages,
+      tools: this.ollamaTool,
+    });
+
+    const finalText: string[] = [];
+
+    if (!response.message.tool_calls) {
+      finalText.push(response.message.content);
+    } else {
+      for (const tool of response.message.tool_calls) {
+        const toolName = tool.function.name;
+        const toolArgs = tool.function.arguments as { [x: string]: unknown } | undefined;
+
+        const result = await this.mcp.callTool({
+          name: toolName,
+          arguments: toolArgs,
+        });
+
+        finalText.push(
+          `[Calling tool ${toolName} with args ${JSON.stringify(toolArgs)}]`
+        );
+
+        messages.push({
+          role: "user",
+          content: JSON.stringify(result.content),
+        });
+
+        try {
+          const response = await ollama.chat({
+            model: OLLAMA_MODEL!,
+            messages,
+          });
+          finalText.push(response.message.content || "");
+        } catch (error) {
+          finalText.push("\nEn error occured.\n");
+          console.log(error)
+          finalText.push("\n");
+        }
       }
     }
 
@@ -131,7 +232,11 @@ class MCPClient {
         if (message.toLowerCase() === "quit") {
           break;
         }
-        const response = await this.processQuery(message);
+
+        const response = (LLM_PROVIDER === "ANTHROPIC") ?
+          await this.processQueryAnthropic(message) :
+          await this.processQueryOllama(message)
+
         console.log("\n" + response);
       }
     } finally {

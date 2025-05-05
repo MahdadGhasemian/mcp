@@ -2,17 +2,12 @@
   "name": "mcp",
   "scripts": {
     "install-client-dependencies": "cd mcp-client-typescript && npm i",
-    "install-client-dependencies-ollama": "cd mcp-client-typescript-ollama && npm i",
     "install-server-dependencies": "cd weather-server-typescript && npm i",
-    "install-dependencies": "npm run install-client-dependencies && npm run install-client-dependencies-ollama && npm run install-server-dependencies",
+    "install-dependencies": "npm run install-client-dependencies && npm run install-server-dependencies",
     "build-client": "cd mcp-client-typescript && npm run build",
-    "build-client-ollama": "cd mcp-client-typescript-ollama && npm run build",
     "build-server": "cd weather-server-typescript && npm run build",
     "build": "npm run build-client && npm run build-server",
-    "build-ollama": "npm run build-client-ollama && npm run build-server",
     "start": "node ./mcp-client-typescript/build/index.js ./weather-server-typescript/build/index.js",
-    "start-ollama": "node ./mcp-client-typescript-ollama/build/index.js ./weather-server-typescript/build/index.js",
-    "dev": "npm run build && npm run start",
-    "dev-ollama": "npm run build-ollama && npm run start-ollama"
+    "dev": "npm run build && npm run start"
   }
 }
