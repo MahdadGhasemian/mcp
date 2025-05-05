@@ -11,9 +11,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.40.1",
     "@modelcontextprotocol/sdk": "^1.10.2",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "ollama": "^0.5.15"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",
