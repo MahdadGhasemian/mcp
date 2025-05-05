@@ -55,6 +55,6 @@ cd weather-server-typescript && npm run build-test && cd .. && npx @modelcontext
 
 ## Docs
 
-[Anthropic API Key Manage](https://console.anthropic.com/settings/keys)
-[Anthropic Model Pricing](https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table)
-[Ollama](https://ollama.com/)
+* [Anthropic API Key Manage](https://console.anthropic.com/settings/keys)
+* [Anthropic Model Pricing](https://docs.anthropic.com/en/docs/about-claude/models/all-models#model-comparison-table)
+* [Ollama](https://ollama.com/)
